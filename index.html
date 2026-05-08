@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhysioAI - 臨床全方位整合系統 (V30.3 Final Locked)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f1f5f9; height: 100vh; overflow: hidden; }
+        
+        /* 基礎版面 */
+        .panel { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); padding: 1rem; margin-bottom: 1rem; }
+        .scroll-v { overflow-y: auto; max-height: calc(100vh - 80px); padding-bottom: 80px; scrollbar-width: thin; }
+        
+        /* 標題與標籤 */
+        .input-label { font-size: 10px; font-weight: bold; color: #64748b; margin-bottom: 2px; display: block; }
+        .section-title { font-weight: 800; color: #334155; font-size: 14px; display: flex; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px; justify-content: space-between; }
+        
+        /* 表格與欄位 */
+        table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; margin-bottom: 8px; }
+        th, td { border: 1px solid #cbd5e1; padding: 4px; text-align: center; vertical-align: middle; }
+        th { background-color: #f8fafc; font-weight: 800; color: #475569; }
+        
+        /* 各模組配色標題 */
+        .joint-header { background-color: #e0e7ff !important; color: #3730a3 !important; text-align: left !important; padding-left: 10px !important; font-size: 12px !important; }
+        .mmt-header { background-color: #dbeafe !important; color: #1e40af !important; text-align: left !important; padding-left: 10px !important; font-size: 12px !important; font-weight: bold; }
+        .derm-header { background-color: #cffafe !important; color: #0e7490 !important; text-align: left !important; padding-left: 10px !important; font-size: 12px !important; font-weight: bold; }
+        .myo-header { background-color: #ffe4e6 !important; color: #881337 !important; text-align: left !important; padding-left: 10px !important; font-size: 12px !important; font-weight: bold; }
+        .neuro-header { background-color: #ccfbf1 !important; color: #115e59 !important; text-align: left !important; padding-left: 10px !important; font-weight: bold; border-left: 4px solid #14b8a6; } 
+        .side-header { background-color: #f1f5f9; color: #64748b; font-weight: 900; font-size: 10px; }
+        
+        /* 輸入框通用 */
+        .clean-input, .rom-input, .level-input, .remark-input, .deg-input { width: 100%; border: none; background: transparent; font-size: 11px; outline: none; text-align: center; font-weight: bold; color: #334155; }
+        .clean-input:focus, .rom-input:focus, .level-input:focus, .remark-input:focus, .deg-input:focus { background-color: #eff6ff; }
+        .obs-select, .derm-select, .res-select { width: 100%; border: none; background: transparent; font-size: 10px; cursor: pointer; text-align: center; font-weight: 600; color: #374151; }
+        
+        /* 備註欄位靠左 */
+        .remark-input { text-align: left; padding-left: 4px; color: #6b7280; font-weight: normal; }
+        .remark-input::placeholder { color: #e5e7eb; font-style: italic; }
+
+        /* MMT/Myotome 特殊樣式 */
+        .single-col { background-color: #fff0f5; font-weight: bold; color: #881337; }
+        .single-input { width: 40px; border-bottom: 2px solid #fda4af; display: inline-block; margin-left: 10px; text-align: center; font-weight: 900; color: #881337; }
+
+        /* 動作與皮節欄位 */
+        .movement-col { background-color: #f8fafc; font-weight: bold; color: #1e293b; border-left: 2px solid #cbd5e1 !important; border-right: 2px solid #cbd5e1 !important; }
+        .derm-col { background-color: #ecfeff; font-weight: bold; color: #164e63; font-size: 10px; border-left: 2px solid #cbd5e1 !important; border-right: 2px solid #cbd5e1 !important; }
+        .action-col { background-color: #fff; font-weight: bold; color: #334155; border-left: 2px solid #cbd5e1 !important; border-right: 2px solid #cbd5e1 !important; }
+
+        /* Neuro 專用樣式 */
+        .test-col { background-color: #fff; font-weight: 900; color: #0f766e; font-size: 11px; text-align: left !important; padding-left: 8px !important; line-height: 1.2; }
+        .nerve-hint { display: block; font-size: 9px; color: #64748b; font-weight: normal; margin-top: 2px; }
+        .deg-input { border-bottom: 1px dashed #cbd5e1; width: 30px; display: inline-block; color: #64748b; font-weight: normal; margin-left: 2px; }
+
+        /* ★★★ Special Tests (ST) 專用樣式 ★★★ */
+        .st-header-row { background-color: #fff7ed; color: #c2410c; font-size: 11px; font-weight: bold; padding: 6px; border-radius: 4px; margin-top: 8px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #f97316; }
+        .st-row { display: flex; align-items: center; border-bottom: 1px dashed #fdba74; padding: 4px 0; font-size: 11px; }
+        .st-row:last-child { border-bottom: none; }
+        .st-name { flex: 1; font-weight: bold; color: #431407; padding-left: 4px; }
+        .st-hint { font-size: 9px; color: #9a3412; font-weight: normal; margin-left: 4px; display: block; opacity: 0.7; }
+        .st-select { border: 1px solid #fed7aa; border-radius: 4px; padding: 1px; font-size: 10px; color: #7c2d12; outline: none; background: #fff; width: 60px; text-align: center; font-weight: bold; cursor: pointer; margin-right: 4px; }
+        .st-pos { background-color: #fee2e2; color: #dc2626; border-color: #fca5a5; } 
+        .st-neg { background-color: #ecfdf5; color: #059669; border-color: #6ee7b7; } 
+
+        /* 隱藏區塊與控制 */
+        .rom-section { display: none; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fff; }
+        
+        /* 3x3 Grid 佈局 */
+        .control-grid { display: grid; grid-template-cols: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .control-grid label { font-size: 10px; font-weight: bold; color: #475569; display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; overflow: hidden; }
+
+        /* 視覺回饋 */
+        .text-abnormal, .val-restricted, .val-weak, .val-abnormal, .res-abnormal { color: #ef4444 !important; font-weight: 900 !important; }
+        .res-normal { color: #059669 !important; font-weight: bold !important; }
+        .summary-box { background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 8px; margin-top: 8px; font-size: 10px; color: #92400e; min-height: 28px; display: flex; align-items: center; flex-wrap: wrap; }
+        
+        /* Mod C (觸診) 專用 */
+        .palp-row { display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #fdba74; padding: 6px 0; animation: slideIn 0.2s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+        .palp-part-input { width: 90px; background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 4px; padding: 2px 4px; font-size: 11px; font-weight: bold; outline: none; }
+        .palp-part-input:focus { border-color: #f97316; background-color: #fff; }
+        .palp-other-input { display: none; width: 80px; border: none; border-bottom: 1px solid #f97316; background: transparent; font-size: 11px; color: #c2410c; outline: none; margin-left: 2px; }
+        .palp-other-input.show { display: inline-block; }
+
+        /* Mod I (脊椎壓力) 專用 */
+        .category-header { background-color: #fce7f3; color: #831843; font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 4px; margin-top: 15px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .add-btn { font-size: 10px; background: white; border: 1px solid #d946ef; color: #d946ef; padding: 2px 6px; border-radius: 4px; cursor: pointer; transition: 0.2s; font-weight: bold; }
+        .add-btn:hover { background: #d946ef; color: white; }
+        .del-btn { color: #e5e7eb; cursor: pointer; font-size: 14px; }
+        .del-btn:hover { color: #ef4444; }
+
+        /* --- 病歷視圖樣式 (Report View) --- */
+        .report-layout { height: 100%; padding-bottom: 16px; }
+        .editor-textarea { width: 100%; height: 100%; resize: none; border: none; outline: none; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 14px; line-height: 1.6; color: #1e293b; padding: 20px; }
+        .btn { font-size: 12px; padding: 6px 12px; border-radius: 6px; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        .btn-outline { border: 1px solid #cbd5e1; color: #475569; background: white; }
+        .btn-copy { background-color: #059669; color: white; }
+        
+        #view-report { display: none; } /* 預設隱藏報告頁 */
+    </style>
+</head>
+  
+<div id="red-flag-modal" class="hidden fixed inset-0 bg-red-900/90 z-[100] flex items-center justify-center transition-opacity duration-300">
+    <div class="bg-white p-6 rounded-xl max-w-sm text-center border-4 border-red-600 shadow-2xl transform transition-all scale-100">
+        <div class="rounded-full bg-red-100 w-20 h-20 flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <span class="material-icons text-5xl text-red-600">gpp_maybe</span>
+        </div>
+        <h2 class="text-2xl font-black text-red-700 mb-2 tracking-tighter">RED FLAG 警示</h2>
+        <p class="text-xs text-slate-500 font-bold uppercase mb-4">Immediate Referral May Be Required</p>
+        <p id="red-flag-msg" class="font-bold text-lg mb-6 text-slate-800 leading-relaxed border-y-2 border-red-50 py-2"></p>
+        <button onclick="closeRedFlag()" class="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 active:scale-95 transition shadow-lg text-sm">
+            我已知悉 (ACKNOWLEDGE)
+        </button>
+    </div>
+</div>
+  
+<body class="text-slate-800">
+
+    <nav class="bg-slate-900 px-6 py-3 flex items-center justify-between text-white shadow-lg sticky top-0 z-50">
+        <div class="flex items-center space-x-2">
+            <span class="material-icons text-emerald-400">medical_services</span>
+            <span class="text-lg font-bold tracking-tight">PhysioAI 臨床整合系統 (V30.3)</span>
+        </div>
+        <div class="flex gap-2">
+            <button id="btn-assess" onclick="switchView('assessment')" class="text-xs bg-indigo-600 hover:bg-indigo-500 px-3 py-1 rounded transition hidden"><span class="material-icons text-[12px] mr-1">arrow_back</span>返回評估</button>
+            <button id="btn-report" onclick="switchView('report')" class="text-xs bg-emerald-600 hover:bg-emerald-500 px-3 py-1 rounded transition font-bold flex items-center"><span class="material-icons text-[14px] mr-1">description</span> 生成病歷 SOAP</button>
+            <button onclick="location.reload()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded transition ml-2">重置 Reset</button>
+        </div>
+    </nav>
+
+    <div id="view-assessment" class="grid grid-cols-12 gap-4 p-4 h-screen">
+        
+        <div class="col-span-12 lg:col-span-7 space-y-4 scroll-v pr-2">
+            
+            <div class="panel border-l-4 border-indigo-500">
+                <h3 class="section-title"><span class="material-icons mr-2 text-indigo-500">person</span> 基本資訊</h3>
+                <div class="grid grid-cols-4 gap-2 mb-2">
+                    <div class="col-span-1"><label class="input-label">姓名 Name</label><input type="text" id="patientName" class="w-full border rounded p-1 text-xs"></div>
+                    <div class="col-span-1"><label class="input-label">性別 Sex</label><select id="patientSex" class="w-full border rounded p-1 text-xs"><option>男 M</option><option>女 F</option></select></div>
+                    <div class="col-span-1"><label class="input-label">年齡 Age</label><select id="patientAge" class="w-full border rounded p-1 text-xs"></select></div>
+                    <div class="col-span-1"><label class="input-label">職業 Job</label><input type="text" id="patientJob" class="w-full border rounded p-1 text-xs"></div>
+                </div>
+                <div class="grid grid-cols-1 gap-2">
+                    <div><label class="input-label text-indigo-700 font-bold">診斷 Diagnosis</label><input type="text" id="dxInput" oninput="runLiveReasoning()" class="w-full border-2 border-indigo-100 rounded p-1 text-xs font-bold bg-indigo-50" placeholder="手寫輸入..."></div>
+                    <div><label class="input-label">主訴史 Brief History</label><input type="text" id="historyInput" class="w-full border rounded p-1 text-xs" placeholder="發病機制與經過..."></div>
+                </div>
+            </div>
+
+            <div class="panel border-l-4 border-red-500">
+                <h3 class="section-title justify-between">
+                    <div class="flex items-center"><span class="material-icons mr-2 text-red-500">report_problem</span> 疼痛評估 (Pain)</div>
+                    <button onclick="addPainCard()" class="text-[10px] bg-white border border-red-500 text-red-500 px-2 py-0.5 rounded cursor-pointer hover:bg-red-500 hover:text-white transition font-bold">+ 新增</button>
+                </h3>
+                <div id="pain-container" class="space-y-2"></div>
+            </div>
+
+            <div class="panel border-l-4 border-purple-500">
+                <h3 class="section-title"><span class="material-icons mr-2 text-purple-500">visibility</span> 姿勢觀察 (Observation)</h3>
+                <div class="grid grid-cols-3 gap-3">
+                    <div><div class="text-[10px] font-bold text-indigo-600 mb-1">側視 LATERAL</div><table class="obs-table"><tbody id="obs-lateral"></tbody></table></div>
+                    <div><div class="text-[10px] font-bold text-indigo-600 mb-1">前視 ANTERIOR</div><table class="obs-table"><tbody id="obs-anterior"></tbody></table></div>
+                    <div><div class="text-[10px] font-bold text-indigo-600 mb-1">後視 POSTERIOR</div><table class="obs-table"><tbody id="obs-posterior"></tbody></table></div>
+                </div>
+                <div class="summary-box" id="obs-summary">無異常發現 (Normal)。</div>
+            </div>
+
+            <div class="panel border-l-4 border-emerald-500">
+                <h3 class="section-title"><span class="material-icons mr-2 text-emerald-500">straighten</span> 關節活動度 (ROM)</h3>
+                <div class="control-grid">
+                    <label><input type="checkbox" onchange="toggleROM('rom-cervical', this)"> 頸椎 C-Spine</label>
+                    <label><input type="checkbox" onchange="toggleROM('rom-thoracic', this)"> 胸椎 T-Spine</label>
+                    <label><input type="checkbox" onchange="toggleROM('rom-lumbar', this)"> 腰椎 L-Spine</label>
+                    <label><input type="checkbox" onchange="toggleROM('rom-shoulder', this)"> 肩膀 Shoulder</label>
+                    <label><input type="checkbox" onchange="toggleROM('rom-elbow', this)"> 手肘 Elbow</label>
+                    <label><input type="checkbox" onchange="toggleROM('rom-wrist', this)"> 手腕 Wrist</label>
+                    <label><input type="checkbox" onchange="toggleROM('rom-hip', this)"> 髖部 Hip</label>
+                    <label><input type="checkbox" onchange="toggleROM('rom-knee', this)"> 膝蓋 Knee</label>
+                    <label><input type="checkbox" onchange="toggleROM('rom-ankle', this)"> 腳踝 Ankle</label>
+                </div>
+                <div id="rom-wrapper">
+                    <div id="rom-cervical" class="rom-section"><table><tr><th colspan="3" class="joint-header">頸椎 Cervical</th></tr><tr><th class="side-header w-1/3">左 L</th><th class="movement-col w-1/3">動作 / 標準</th><th class="side-header w-1/3">右 R</th></tr><tr data-std="45"><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Flexion (45°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td></tr><tr data-std="45"><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Extension (45°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td></tr><tr data-std="45"><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Side Bend (45°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td></tr><tr data-std="60"><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Rotation (60°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td></tr></table></div>
+                    <div id="rom-thoracic" class="rom-section"><table><tr><th colspan="3" class="joint-header">胸椎 Thoracic</th></tr><tr><th class="side-header">左 L</th><th class="movement-col">動作 / 標準</th><th class="side-header">右 R</th></tr><tr data-std="40"><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Rotation (40°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td></tr><tr data-std="25"><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Side Bend (25°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td></tr></table></div>
+                    <div id="rom-lumbar" class="rom-section"><table><tr><th colspan="3" class="joint-header">腰椎 Lumbar</th></tr><tr><th class="side-header">左 L</th><th class="movement-col">動作 / 標準</th><th class="side-header">右 R</th></tr><tr data-std="80"><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Flexion (80°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td></tr><tr data-std="25"><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Extension (25°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td></tr><tr data-std="35"><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Side Bend (35°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td></tr></table></div>
+                    <div id="rom-shoulder" class="rom-section"><table><tr><th colspan="7" class="joint-header">肩膀 Shoulder</th></tr><tr><th colspan="3" class="side-header">左 Left</th><th rowspan="2" class="movement-col">動作 / 標準</th><th colspan="3" class="side-header">右 Right</th></tr><tr><th>End</th><th>PROM</th><th>AROM</th><th>AROM</th><th>PROM</th><th>End</th></tr><tr data-std="180"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Flexion (180°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="60"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Extension (60°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="180"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Abduction (180°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="50"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Adduction (50°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="70"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Int. Rot (70°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="90"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Ext. Rot (90°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr></table></div>
+                    <div id="rom-elbow" class="rom-section"><table><tr><th colspan="7" class="joint-header">手肘 Elbow</th></tr><tr><th colspan="3" class="side-header">左 Left</th><th rowspan="2" class="movement-col">動作 / 標準</th><th colspan="3" class="side-header">右 Right</th></tr><tr><th>End</th><th>PROM</th><th>AROM</th><th>AROM</th><th>PROM</th><th>End</th></tr><tr data-std="150"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Flexion (150°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="0"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Extension (0°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="80"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Supination (80°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="80"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Pronation (80°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr></table></div>
+                    <div id="rom-wrist" class="rom-section"><table><tr><th colspan="7" class="joint-header">手腕 Wrist</th></tr><tr><th colspan="3" class="side-header">左 Left</th><th rowspan="2" class="movement-col">動作 / 標準</th><th colspan="3" class="side-header">右 Right</th></tr><tr><th>End</th><th>PROM</th><th>AROM</th><th>AROM</th><th>PROM</th><th>End</th></tr><tr data-std="80"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Flexion (80°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="70"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Extension (70°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="20"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Radial Dev (20°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="30"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Ulnar Dev (30°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr></table></div>
+                    <div id="rom-hip" class="rom-section"><table><tr><th colspan="7" class="joint-header">髖部 Hip</th></tr><tr><th colspan="3" class="side-header">左 Left</th><th rowspan="2" class="movement-col">動作 / 標準</th><th colspan="3" class="side-header">右 Right</th></tr><tr><th>End</th><th>PROM</th><th>AROM</th><th>AROM</th><th>PROM</th><th>End</th></tr><tr data-std="120"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Flexion (120°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="20"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Extension (20°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="45"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Abduction (45°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="30"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Adduction (30°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="45"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Int. Rot (45°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="45"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Ext. Rot (45°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr></table></div>
+                    <div id="rom-knee" class="rom-section"><table><tr><th colspan="7" class="joint-header">膝蓋 Knee</th></tr><tr><th colspan="3" class="side-header">左 Left</th><th rowspan="2" class="movement-col">動作 / 標準</th><th colspan="3" class="side-header">右 Right</th></tr><tr><th>End</th><th>PROM</th><th>AROM</th><th>AROM</th><th>PROM</th><th>End</th></tr><tr data-std="135"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Flexion (135°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="0"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Extension (0°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr></table></div>
+                    <div id="rom-ankle" class="rom-section"><table><tr><th colspan="7" class="joint-header">腳踝 Ankle</th></tr><tr><th colspan="3" class="side-header">左 Left</th><th rowspan="2" class="movement-col">動作 / 標準</th><th colspan="3" class="side-header">右 Right</th></tr><tr><th>End</th><th>PROM</th><th>AROM</th><th>AROM</th><th>PROM</th><th>End</th></tr><tr data-std="20"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Dorsi Flex (20°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="50"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Plantar Flex (50°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="35"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Inversion (35°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr><tr data-std="15"><td><input class="rom-input" value="WNL"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td class="movement-col">Eversion (15°)</td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL" oninput="checkROM(this)"></td><td><input class="rom-input" value="WNL"></td></tr></table></div>
+                </div>
+                <div class="summary-box" id="rom-summary">所有數值正常 (WNL)。</div>
+            </div>
+
+            <div class="panel border-l-4 border-blue-500">
+                <h3 class="section-title"><span class="material-icons mr-2 text-blue-500">fitness_center</span> 徒手肌力測試 (MMT)</h3>
+                <div class="control-grid">
+                    <label><input type="checkbox" onchange="toggleMMT('mmt-cervical', this)"> 頸椎 Cervical</label>
+                    <label><input type="checkbox" onchange="toggleMMT('mmt-thoracic', this)"> 胸椎 Thoracic</label>
+                    <label><input type="checkbox" onchange="toggleMMT('mmt-lumbar', this)"> 腰椎 Lumbar</label>
+                    <label><input type="checkbox" onchange="toggleMMT('mmt-shoulder', this)"> 肩膀 Shoulder</label>
+                    <label><input type="checkbox" onchange="toggleMMT('mmt-elbow', this)"> 手肘 Elbow</label>
+                    <label><input type="checkbox" onchange="toggleMMT('mmt-wrist', this)"> 手腕 Wrist</label>
+                    <label><input type="checkbox" onchange="toggleMMT('mmt-hip', this)"> 髖部 Hip</label>
+                    <label><input type="checkbox" onchange="toggleMMT('mmt-knee', this)"> 膝蓋 Knee</label>
+                    <label><input type="checkbox" onchange="toggleMMT('mmt-ankle', this)"> 腳踝 Ankle</label>
+                </div>
+                <div id="mmt-wrapper">
+                    <div id="mmt-cervical" class="rom-section"><table><tr><th colspan="3" class="mmt-header">頸椎 MMT</th></tr><tr><th class="side-header w-1/3">左 L (Grade)</th><th class="movement-col w-1/3">動作 / 肌肉</th><th class="side-header w-1/3">右 R (Grade)</th></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Flexion</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Extension</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Side Bend</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Rotation</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr></table></div>
+                    <div id="mmt-thoracic" class="rom-section"><table><tr><th colspan="3" class="mmt-header">胸椎 MMT</th></tr><tr><th class="side-header">左 L (Grade)</th><th class="movement-col">動作 / 肌肉</th><th class="side-header">右 R (Grade)</th></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Flexion</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Extension</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Rotation</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Side Bend</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr></table></div>
+                    <div id="mmt-lumbar" class="rom-section"><table><tr><th colspan="3" class="mmt-header">腰椎 MMT</th></tr><tr><th class="side-header">左 L (Grade)</th><th class="movement-col">動作 / 肌肉</th><th class="side-header">右 R (Grade)</th></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Flexion</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Extension</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Side Bend</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr></table></div>
+                    <div id="mmt-shoulder" class="rom-section"><table><tr><th colspan="3" class="mmt-header">肩膀 Shoulder MMT</th></tr><tr><th class="side-header">左 L (Grade)</th><th class="movement-col">動作 / 肌肉</th><th class="side-header">右 R (Grade)</th></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Flexion</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Extension</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Abduction</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Adduction</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Int. Rot</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Ext. Rot</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr></table></div>
+                    <div id="mmt-elbow" class="rom-section"><table><tr><th colspan="3" class="mmt-header">手肘 Elbow MMT</th></tr><tr><th class="side-header">左 L (Grade)</th><th class="movement-col">動作 / 肌肉</th><th class="side-header">右 R (Grade)</th></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Flexion</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Extension</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Supination</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Pronation</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr></table></div>
+                    <div id="mmt-wrist" class="rom-section"><table><tr><th colspan="3" class="mmt-header">手腕 Wrist MMT</th></tr><tr><th class="side-header">左 L (Grade)</th><th class="movement-col">動作 / 肌肉</th><th class="side-header">右 R (Grade)</th></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Flexion</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Extension</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Radial Dev</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Ulnar Dev</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr></table></div>
+                    <div id="mmt-hip" class="rom-section"><table><tr><th colspan="3" class="mmt-header">髖部 Hip MMT</th></tr><tr><th class="side-header">左 L (Grade)</th><th class="movement-col">動作 / 肌肉</th><th class="side-header">右 R (Grade)</th></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Flexion</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Extension</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Abduction</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Adduction</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Int. Rot</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Ext. Rot</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr></table></div>
+                    <div id="mmt-knee" class="rom-section"><table><tr><th colspan="3" class="mmt-header">膝蓋 Knee MMT</th></tr><tr><th class="side-header">左 L (Grade)</th><th class="movement-col">動作 / 肌肉</th><th class="side-header">右 R (Grade)</th></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Flexion</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Extension</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr></table></div>
+                    <div id="mmt-ankle" class="rom-section"><table><tr><th colspan="3" class="mmt-header">腳踝 Ankle MMT</th></tr><tr><th class="side-header">左 L (Grade)</th><th class="movement-col">動作 / 肌肉</th><th class="side-header">右 R (Grade)</th></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Dorsi Flex</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Plantar Flex</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Inversion</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr><tr><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td><td class="movement-col">Eversion</td><td><input class="rom-input" value="5" oninput="checkMMT(this)"></td></tr></table></div>
+                </div>
+                <div class="summary-box" id="mmt-summary">所有肌力正常 (Grade 5)。</div>
+            </div>
+
+            <div class="panel border-l-4 border-cyan-500">
+                <h3 class="section-title"><span class="material-icons mr-2 text-cyan-500">accessibility</span> 皮節感覺測試 (Dermatome)</h3>
+                <div class="control-grid">
+                    <label><input type="checkbox" onchange="toggleDerm('derm-c', this)"> 頸椎 C-Spine</label>
+                    <label><input type="checkbox" onchange="toggleDerm('derm-t', this)"> 胸椎 T-Spine</label>
+                    <label><input type="checkbox" onchange="toggleDerm('derm-l', this)"> 腰椎 L-Spine</label>
+                    <label><input type="checkbox" onchange="toggleDerm('derm-s', this)"> 薦椎 S-Spine</label>
+                </div>
+                <div id="derm-wrapper">
+                    <div id="derm-c" class="rom-section"><table><tr><th colspan="3" class="derm-header">頸椎皮節 (Cervical)</th></tr><tr><th class="side-header">Left</th><th class="derm-col">Level</th><th class="side-header">Right</th></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">C2 (Occiput)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">C3 (Supraclavicular)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">C4 (AC Joint)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">C5 (Lat. Arm)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">C6 (Thumb)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">C7 (Middle Finger)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">C8 (Little Finger)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr></table></div>
+                    <div id="derm-t" class="rom-section"><table><tr><th colspan="3" class="derm-header">胸椎皮節 (Thoracic)</th></tr><tr><th class="side-header">Left</th><th class="derm-col">Level</th><th class="side-header">Right</th></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">T1 (Med. Arm)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">T2 (Axilla)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">T4 (Nipple Line)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">T10 (Umbilicus)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">T12 (Groin)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr></table></div>
+                    <div id="derm-l" class="rom-section"><table><tr><th colspan="3" class="derm-header">腰椎皮節 (Lumbar)</th></tr><tr><th class="side-header">Left</th><th class="derm-col">Level</th><th class="side-header">Right</th></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">L1 (Upper Thigh)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">L2 (Mid Thigh)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">L3 (Med. Knee)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">L4 (Med. Malleolus)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">L5 (Dorsum Foot)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr></table></div>
+                    <div id="derm-s" class="rom-section"><table><tr><th colspan="3" class="derm-header">薦椎皮節 (Sacral)</th></tr><tr><th class="side-header">Left</th><th class="derm-col">Level</th><th class="side-header">Right</th></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">S1 (Lat. Heel)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr><tr><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td><td class="derm-col">S2 (Popliteal Fossa)</td><td><select class="derm-select" onchange="checkDerm(this)"><option>正常</option><option value="異常">異常</option></select></td></tr></table></div>
+                </div>
+                <div class="summary-box" id="derm-summary">皮節感覺正常 (Intact)。</div>
+            </div>
+
+            <div class="panel border-l-4 border-rose-500">
+                <h3 class="section-title"><span class="material-icons mr-2 text-rose-500">settings_input_component</span> 肌節測試 (Myotome)</h3>
+                <div class="control-grid">
+                    <label><input type="checkbox" onchange="toggleMyo('myo-upper', this)"> 上肢 Upper Limb (C1-T1)</label>
+                    <label><input type="checkbox" onchange="toggleMyo('myo-lower', this)"> 下肢 Lower Limb (L2-S2)</label>
+                </div>
+                <div id="myo-wrapper">
+                    <div id="myo-upper" class="rom-section">
+                        <table>
+                            <tr><th colspan="3" class="joint-header myo-header">上肢肌節 Upper Limb (C1-T1)</th></tr>
+                            <tr><td colspan="3" class="single-col">C1-C2 Neck flexion <input class="rom-input myo-val single-input" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><th class="side-header w-1/4">Left (Grade)</th><th class="action-col">動作提示 Action</th><th class="side-header w-1/4">Right (Grade)</th></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">C3 Neck side flexion</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">C4 Shoulder elevation</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">C5 Shoulder abd</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">C6 Elbow flex & wrist ext</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">C7 Elbow ext & wrist flex</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">C8 Thumb ext</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">T1 Finger abd</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                        </table>
+                    </div>
+                    <div id="myo-lower" class="rom-section">
+                        <table>
+                            <tr><th colspan="3" class="joint-header myo-header">下肢肌節 Lower Limb (L2-S2)</th></tr>
+                            <tr><th class="side-header w-1/4">Left (Grade)</th><th class="action-col">動作提示 Action</th><th class="side-header w-1/4">Right (Grade)</th></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">L2 Hip flexion</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">L3 Knee extension</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">L4 Ankle dorsiflexion</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">L5 Great toe extension</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">S1 Ankle PF / Eversion</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                            <tr><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td><td class="action-col">S2 Knee flexion</td><td><input class="rom-input myo-val" value="5" oninput="checkMyo(this)"></td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="summary-box" id="myo-summary-list">神經肌肉控制正常 (Intact)。</div>
+            </div>
+
+            <div class="panel border-l-4 border-teal-600">
+                <h3 class="section-title"><span class="material-icons mr-2 text-teal-600">flash_on</span> 神經張力測試 (Neurodynamic Tests)</h3>
+                <div class="control-grid">
+                    <label><input type="checkbox" onchange="toggleSec('neuro-ulnt', this)"> 上肢張力 (ULTT)</label>
+                    <label><input type="checkbox" onchange="toggleSec('neuro-llnt', this)"> 下肢張力 (LLNT)</label>
+                </div>
+                <div id="neuro-ulnt" class="rom-section">
+                    <table>
+                        <tr><th colspan="4" class="neuro-header" style="border-left: 4px solid #14b8a6; background-color: #ccfbf1; color: #115e59;">上肢神經張力 (Upper Limb / ULTT)</th></tr>
+                        <tr><th style="width:25%">左 (L)</th><th style="width:30%">測試名稱</th><th style="width:25%">右 (Ｒ)</th><th style="width:20%">備註</th></tr>
+                        <tr>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td class="test-col">ULTT 1 (Elvey 1)<span class="nerve-hint">Median N. / Abd 110°</span></td>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td><input class="remark-input" placeholder="..." oninput="updateNeuroSummary()"></td>
+                        </tr>
+                        <tr>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td class="test-col">ULTT 2A<span class="nerve-hint">Median/Axillary / Abd 10°</span></td>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td><input class="remark-input" placeholder="..." oninput="updateNeuroSummary()"></td>
+                        </tr>
+                        <tr>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td class="test-col">ULTT 2B (Radial)<span class="nerve-hint">Radial N. / Depress + Ext + IR</span></td>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td><input class="remark-input" placeholder="..." oninput="updateNeuroSummary()"></td>
+                        </tr>
+                        <tr>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td class="test-col">ULTT 3 (Ulnar)<span class="nerve-hint">Ulnar N. / Hand to Ear (Flex)</span></td>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td><input class="remark-input" placeholder="..." oninput="updateNeuroSummary()"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div id="neuro-llnt" class="rom-section">
+                    <table>
+                        <tr><th colspan="4" class="neuro-header" style="border-left: 4px solid #14b8a6; background-color: #ccfbf1; color: #115e59;">下肢神經張力 (Lower Limb / LLNT)</th></tr>
+                        <tr><th style="width:25%">左 (Ｌ)</th><th style="width:30%">測試名稱</th><th style="width:25%">右 (Ｒ)</th><th style="width:20%">備註</th></tr>
+                        <tr>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td class="test-col">SLR Basic<span class="nerve-hint">Sciatic / L5-S1</span></td>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td><input class="remark-input" placeholder="..." oninput="updateNeuroSummary()"></td>
+                        </tr>
+                        <tr>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td class="test-col">SLR 2 (Tibial)<span class="nerve-hint">Tibial N. / TED (Ever + DF)</span></td>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td><input class="remark-input" placeholder="..." oninput="updateNeuroSummary()"></td>
+                        </tr>
+                        <tr>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td class="test-col">SLR 3 (Sural)<span class="nerve-hint">Sural N. / SID (Inv + DF)</span></td>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td><input class="remark-input" placeholder="..." oninput="updateNeuroSummary()"></td>
+                        </tr>
+                        <tr>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td class="test-col">SLR 4 (Peroneal)<span class="nerve-hint">Common Peroneal N. / PIP (Inv + PF)</span></td>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td><input class="remark-input" placeholder="..." oninput="updateNeuroSummary()"></td>
+                        </tr>
+                        <tr>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option></select></td>
+                            <td class="test-col">Crossed SLR<span class="nerve-hint">Well Leg / HNP Specific</span></td>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option></select></td>
+                            <td><input class="remark-input" placeholder="..." oninput="updateNeuroSummary()"></td>
+                        </tr>
+                        <tr>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option></select></td>
+                            <td class="test-col">Slump Test<span class="nerve-hint">Spinal Cord / Dura</span></td>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option></select></td>
+                            <td><input class="remark-input" placeholder="..." oninput="updateNeuroSummary()"></td>
+                        </tr>
+                        <tr>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td class="test-col">PKB (Nachlas)<span class="nerve-hint">Femoral N. / L2-L4</span></td>
+                            <td><select class="res-select" onchange="checkNeuroColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="緊繃 Tight">緊繃 Tight</option></select><input class="deg-input" placeholder="°" oninput="updateNeuroSummary()"></td>
+                            <td><input class="remark-input" placeholder="..." oninput="updateNeuroSummary()"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="summary-box" id="neuro-summary">神經張力測試陰性 (Negative)。</div>
+            </div>
+
+            <div class="panel border-l-4 border-orange-500">
+                <h3 class="section-title">
+                    <div class="flex items-center">
+                        <span class="material-icons mr-2 text-orange-500">biotech</span> 特殊測試建議 (Special Tests)
+                    </div>
+                    <span id="ai-badge" class="hidden bg-orange-100 text-orange-700 text-[9px] px-2 py-0.5 rounded-full font-bold flex items-center">
+                        <span class="material-icons text-[10px] mr-1">auto_awesome</span> AI 推薦
+                    </span>
+                </h3>
+                <div id="st-container">
+                    <div class="text-center text-xs text-slate-400 py-6 italic">等待疼痛部位輸入...</div>
+                </div>
+                <div class="summary-box" id="st-summary">
+                    <span class="italic text-slate-400">未執行測試。</span>
+                </div>
+            </div>
+
+            <div class="panel border-l-4 border-fuchsia-600">
+    <h3 class="section-title"><span class="material-icons mr-2 text-fuchsia-600">healing</span> 脊椎壓力測試 (Spinal Pressure)</h3>
+    
+    <div class="control-grid">
+        <label><input type="checkbox" onchange="toggleSpine('spine-pacvp', this)"> 1-A. 中央 (PACVP)</label>
+        <label><input type="checkbox" onchange="toggleSpine('spine-split', this)"> 1-B. 單側 (Unilateral)</label>
+        <label><input type="checkbox" onchange="toggleSpine('spine-special', this)"> 2. 特殊區域 (Special)</label>
+        <label><input type="checkbox" onchange="toggleSpine('spine-combined', this)"> 3. 複合壓力 (Combined)</label>
+        <label><input type="checkbox" onchange="toggleSpine('spine-aux', this)"> 4. 輔助測試 (Auxiliary)</label>
+    </div>
+
+    <div id="spine-pacvp" class="rom-section">
+        <div class="category-header"><span>1-A. 中央椎骨壓力 (PACVP)</span><button class="add-btn" onclick="addCentralRow('table-pacvp')">+ 新增</button></div>
+        <table id="table-pacvp"><thead><tr><th style="width:25%">Level</th><th style="width:35%">Finding</th><th style="width:35%">Remark</th><th style="width:5%"></th></tr></thead><tbody><tr><td><input type="text" class="level-input" placeholder="L3" oninput="updateSpineSummary()"></td><td><select class="res-select" onchange="checkSpineColor(this)"><option value="正常 Normal">正常 Normal</option><option value="活動度過低 Hypo">活動度過低 Hypo</option><option value="活動度過高 Hyper">活動度過高 Hyper</option><option value="疼痛 Pain">疼痛 Pain</option><option value="痙攣 Spasm">痙攣 Spasm</option></select></td><td><input type="text" class="remark-input" placeholder="備註..." oninput="updateSpineSummary()"></td><td><span class="material-icons del-btn" onclick="delRow(this)">close</span></td></tr></tbody></table>
+    </div>
+
+    <div id="spine-split" class="rom-section">
+        <div class="category-header"><span>1-B. 單側與橫向 (PAUVP/Transverse)</span><button class="add-btn" onclick="addSplitRow('table-split')">+ 新增</button></div>
+        <table id="table-split"><thead><tr><th style="width:20%">Tech</th><th style="width:20%">Right/PushL</th><th style="width:15%">Level</th><th style="width:20%">Left/PushR</th><th style="width:20%">Remark</th><th style="width:5%"></th></tr></thead><tbody><tr><td><select class="res-select font-bold text-fuchsia-900 text-left"><option value="PAUVP">PAUVP</option><option value="Transverse">Transverse</option><option value="APUVP">APUVP</option></select></td><td><select class="res-select" onchange="checkSpineColor(this)"><option value="正常 Normal">正常</option><option value="活動度過低 Hypo">過低 Hypo</option><option value="活動度過高 Hyper">過高 Hyper</option><option value="疼痛 Pain">疼痛 Pain</option></select></td><td><input type="text" class="level-input" placeholder="C5" oninput="updateSpineSummary()"></td><td><select class="res-select" onchange="checkSpineColor(this)"><option value="正常 Normal">正常</option><option value="活動度過低 Hypo">過低 Hypo</option><option value="活動度過高 Hyper">過高 Hyper</option><option value="疼痛 Pain">疼痛 Pain</option></select></td><td><input type="text" class="remark-input" placeholder="備註..." oninput="updateSpineSummary()"></td><td><span class="material-icons del-btn" onclick="delRow(this)">close</span></td></tr></tbody></table>
+    </div>
+
+    <div id="spine-special" class="rom-section">
+        <div class="category-header"><span>2. 特殊區域 (Special Areas)</span><button class="add-btn" onclick="addSpecialRow('table-special')">+ 新增</button></div>
+        <table id="table-special"><thead><tr><th style="width:30%">Tech</th><th style="width:15%">Level</th><th style="width:25%">Result</th><th style="width:25%">Remark</th><th style="width:5%"></th></tr></thead><tbody><tr><td><select class="res-select font-bold text-fuchsia-900 text-left"><option value="AP Central">AP Central</option><option value="Costovertebral">Costovertebral</option><option value="Coccygeal">Coccygeal</option></select></td><td><input type="text" class="level-input" placeholder="..." oninput="updateSpineSummary()"></td><td><select class="res-select" onchange="checkSpineColor(this)"><option value="正常 Normal">正常 Normal</option><option value="活動度過低 Hypo">過低 Hypo</option><option value="活動度過高 Hyper">過高 Hyper</option><option value="疼痛 Pain">疼痛 Pain</option><option value="偏移 Deviated">偏移 Deviated</option></select></td><td><input type="text" class="remark-input" placeholder="備註..." oninput="updateSpineSummary()"></td><td><span class="material-icons del-btn" onclick="delRow(this)">close</span></td></tr></tbody></table>
+    </div>
+
+    <div id="spine-combined" class="rom-section">
+        <div class="category-header"><span>3. 複合壓力 (Combined)</span><button class="add-btn" onclick="addCombinedRow('table-combined')">+ 新增</button></div>
+        <table id="table-combined"><thead><tr><th style="width:30%">Test</th><th style="width:15%">Level</th><th style="width:25%">Result</th><th style="width:25%">Remark</th><th style="width:5%"></th></tr></thead><tbody><tr><td><select class="res-select font-bold text-fuchsia-900 text-left"><option value="Axial Compression">Axial Comp.</option><option value="Narrowing">Narrowing</option><option value="Combined PACVP">Combined PACVP</option></select></td><td><input type="text" class="level-input" placeholder="..." oninput="updateSpineSummary()"></td><td><select class="res-select" onchange="checkSpineColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="疼痛 Pain">疼痛 Pain</option></select></td><td><input type="text" class="remark-input" placeholder="備註..." oninput="updateSpineSummary()"></td><td><span class="material-icons del-btn" onclick="delRow(this)">close</span></td></tr></tbody></table>
+    </div>
+
+    <div id="spine-aux" class="rom-section">
+        <div class="category-header"><span>4. 輔助測試 (Auxiliary)</span></div>
+        <table id="table-aux"><thead><tr><th style="width:30%">Test</th><th style="width:15%">Level</th><th style="width:25%">Result</th><th style="width:25%">Remark</th><th style="width:5%"></th></tr></thead><tbody><tr><td class="font-bold text-fuchsia-900 text-left pl-2">Tap Test (敲擊)</td><td><input type="text" class="level-input" placeholder="T-spine" oninput="updateSpineSummary()"></td><td><select class="res-select" onchange="checkSpineColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="疼痛 Pain">疼痛 Pain</option></select></td><td><input type="text" class="remark-input" placeholder="備註..." oninput="updateSpineSummary()"></td><td><span class="material-icons del-btn" onclick="delRow(this)">close</span></td></tr></tbody></table>
+    </div>
+
+    <div class="summary-box" id="spine-summary">未執行測試或無異常發現。</div>
+</div>
+
+        </div>
+
+        <div class="col-span-12 lg:col-span-5 space-y-4 scroll-v pl-2">
+            <div class="panel border-t-4 border-indigo-600">
+                <h3 class="section-title">臨床推論 Assessment</h3>
+                <div id="diag-output" class="text-xs font-bold text-slate-700 leading-relaxed">等待數據輸入...</div>
+            </div>
+            <div class="panel border-t-4 border-emerald-500">
+                <h3 class="section-title">治療計畫 Plan</h3>
+                <div id="treatment-content" class="text-xs text-slate-700"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-report" class="report-layout" style="display: none;">
+        <div class="panel border-t-4 border-emerald-500 h-full">
+            <div class="section-title">
+                <div class="flex items-center gap-4">
+                    <span class="material-icons mr-2 text-emerald-500">edit_note</span> 治療紀錄 (SOAP Note)
+                </div>
+                <div class="flex gap-2">
+    <button onclick="generateRealSOAP()" class="btn btn-outline"><span class="material-icons text-[14px]">refresh</span> 刷新</button>
+    
+    <button onclick="printReport()" class="btn bg-sky-600 text-white hover:bg-sky-500"><span class="material-icons text-[14px]">print</span> 列印</button>
+    
+    <button onclick="saveReport()" class="btn bg-orange-500 text-white hover:bg-orange-400"><span class="material-icons text-[14px]">save_alt</span> 存檔</button>
+
+
+    <button onclick="copyToClipboard()" class="btn btn-copy"><span class="material-icons text-[14px]">content_copy</span> 複製</button>
+</div>
+            </div>
+            <div class="flex-1 relative h-full">
+                <textarea id="soap-editor" class="editor-textarea" spellcheck="false"></textarea>
+                <div id="toast" class="absolute top-4 right-4 bg-slate-800 text-white text-xs py-2 px-4 rounded shadow-lg opacity-0 transition duration-300 pointer-events-none">已複製到剪貼簿！</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      
+    
+
+      // --- Spine Toggling ---
+function toggleSpine(id, cb) { 
+    const s = document.getElementById(id); 
+    if(s) {
+        // 使用與 ROM/MMT 相同的邏輯
+        s.style.display = (cb.checked || cb.value === "true") ? 'block' : 'none'; 
+    }
+}
+      // --- 新增功能：列印與存檔 ---
+
+    // 1. 專業列印功能 (開啟新視窗，確保格式整齊)
+    function printReport() {
+        const content = document.getElementById('soap-editor').value;
+        const ptName = document.getElementById('patientName').value || 'Patient';
+        
+        // 開啟一個隱藏的列印視窗
+        const printWindow = window.open('', '', 'height=800,width=800');
+        
+        printWindow.document.write('<html><head><title>PhysioAI Report - ' + ptName + '</title>');
+        printWindow.document.write('<style>');
+        printWindow.document.write('body { font-family: "Microsoft JhengHei", sans-serif; padding: 40px; }');
+        printWindow.document.write('pre { font-family: "Consolas", monospace; white-space: pre-wrap; word-wrap: break-word; font-size: 14px; line-height: 1.5; }');
+        printWindow.document.write('@media print { body { padding: 0; } }'); // 列印時去除邊距
+        printWindow.document.write('</style>');
+        printWindow.document.write('</head><body>');
+        // 使用 <pre> 標籤保留原本的排版格式
+        printWindow.document.write('<pre>' + content + '</pre>');
+        printWindow.document.write('</body></html>');
+        
+        printWindow.document.close();
+        printWindow.focus();
+        
+        // 等待資源加載後列印
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 500);
+    }
+
+    // 2. 存檔功能 (下載為 .txt 檔案)
+    function saveReport() {
+        const content = document.getElementById('soap-editor').value;
+        const ptName = document.getElementById('patientName').value || 'Anonymous';
+        const date = new Date().toISOString().slice(0, 10); // 格式: YYYY-MM-DD
+        
+        // 建立檔案 Blob
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        
+        // 建立虛擬下載連結
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `SOAP_${ptName}_${date}.txt`; // 檔名範例: SOAP_王小明_2023-10-27.txt
+        
+        // 觸發下載
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+      
+    // --- Config & Data ---
+    const obsData = { lateral: ["頭 Head", "脊椎 Spine", "骨盆 Pelvis", "膝蓋 Knee", "腳踝 Ankle"], anterior: ["頭 Head", "鎖骨 Clavicle", "手臂 Arm", "髂脊 Iliac crest", "ASIS", "GT", "膝蓋骨 Patella", "內踝 Malleolus"], posterior: ["頭 Head", "肩胛骨 Scapular", "胸椎 T-spine", "腰椎 Lumbar", "PSIS", "膝窩 Knee", "手肘 Elbow"] };
+    const findings = ["正常 Normal", "偏左 Left", "偏右 Right", "前傾 Anterior", "後傾 Posterior", "駝背 Kyphosis", "其他 Other..."];
+    
+    // 紅旗關鍵字庫 (Rule Engine: Red Flags)
+    const redFlagRules = [
+        { key: "雙側麻木", msg: "偵測到雙側症狀，請排除脊髓壓迫 (Cord Compression) 或馬尾症候群。" },
+        { key: "雙側無力", msg: "偵測到雙側症狀，請排除脊髓壓迫 (Cord Compression) 或馬尾症候群。" },
+        { key: "劇烈夜間痛", msg: "持續性夜間疼痛可能是癌症轉移或感染跡象。" },
+        { key: "體重減輕", msg: "不明原因體重減輕為癌症 Red Flag，建議轉介內科。" },
+        { key: "大小便", msg: "大小便功能異常 (失禁/滯留) 為馬尾症候群徵兆，需緊急處置。" },
+        { key: "失禁", msg: "大小便功能異常 (失禁/滯留) 為馬尾症候群徵兆，需緊急處置。" },
+        { key: "發燒", msg: "合併發燒可能提示脊椎感染 (Osteomyelitis/Discitis)。" },
+        { key: "癌症", msg: "癌症病史患者需高度警覺骨轉移風險。" }
+    ];
+
+    // 初始化
+    window.onload = function() {
+        initSelectOptions();
+        initObsTable();
+        loadFromLocalStorage(); // ★ 啟動時讀取資料
+        
+        // 全局監聽輸入事件以觸發自動儲存與規則引擎
+        document.body.addEventListener('input', debounce((e) => {
+            handleGlobalInput(e);
+        }, 500));
+        
+        document.body.addEventListener('change', (e) => {
+            handleGlobalInput(e);
+        });
+    };
+
+    function initSelectOptions() {
+        const s = document.getElementById('patientAge');
+        for(let i=5;i<=100;i++){ let o=document.createElement('option'); o.value=i; o.innerText=i+'歲'; if(i===30)o.selected=true; s.appendChild(o); }
+    }
+
+    function initObsTable() {
+        ["lateral", "anterior", "posterior"].forEach(view => {
+            const tbody = document.getElementById(`obs-${view}`);
+            // 避免重複生成
+            if(tbody.children.length === 0) {
+                obsData[view].forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="bg-slate-50 w-2/5">${item}</td><td class="obs-cell" data-label="${item}"><select class="obs-select text-normal" onchange="handleObsChange(this)">${findings.map(f => `<option>${f}</option>`).join('')}</select></td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        });
+    }
+
+    // --- Core: Input Handler (Auto-save & Rule Engine Trigger) ---
+    function handleGlobalInput(e) {
+        saveToLocalStorage(); // 自動儲存
+        runLiveReasoning();   // 執行規則引擎
+        checkRedFlags();      // 檢查紅旗症狀
+        
+        // 特殊處理：如果是疼痛輸入，更新特殊測試建議
+        if(e.target.classList.contains('pain-input')) analyzePainInput();
+    }
+
+    // --- Feature: LocalStorage (Auto-Save) ---
+    const STORAGE_KEY = 'physioai_v30_data';
+
+    function saveToLocalStorage() {
+        const data = {
+            static: {}, // ID-based inputs
+            pain: [],   // Dynamic Pain cards
+            spine: {}   // Dynamic Spine tables
+        };
+
+        // 1. Save Static Inputs (ById)
+        document.querySelectorAll('input[id], select[id], textarea[id]').forEach(el => {
+            if(el.type === 'checkbox') data.static[el.id] = el.checked;
+            else data.static[el.id] = el.value;
+        });
+
+        // 2. Save Static Table Inputs (By Class/Context is harder, simplified here)
+        // 由於表格太多，這裡示範儲存 DOM 結構或特定值的概念比較複雜。
+        // 為了簡單且穩定，我們儲存整個 HTML 的 input values 是不實際的。
+        // 這裡採用「快照」策略：針對動態產生的 Rows 進行序列化。
+        
+        // Pain Cards
+        document.querySelectorAll('.pain-card').forEach(card => {
+            data.pain.push({
+                loc: card.querySelector('.pain-input').value,
+                vas: card.querySelector('.vas-val').innerText
+            });
+        });
+
+        // Dynamic Spine Tables (PACVP, etc) - 簡單序列化
+        data.spine.pacvp = serializeTableRows('table-pacvp');
+        data.spine.split = serializeTableRows('table-split');
+        data.spine.special = serializeTableRows('table-special');
+        data.spine.combined = serializeTableRows('table-combined');
+        data.spine.aux = serializeTableRows('table-aux');
+
+        // Obs, ROM, MMT, Neuro Inputs (透過 class 遍歷儲存 value)
+        // 為了效能，這裡演示主要功能。若要完整還原所有數百個 inputs，
+        // 建議遍歷 document.getElementsByTagName('input') 並建立 path map。
+        // 這裡我們針對 "可見的" 重要資料做儲存。
+        
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        showAutoSaveStatus();
+    }
+
+    function serializeTableRows(tableId) {
+        const rows = [];
+        const tbody = document.querySelector(`#${tableId} tbody`);
+        if(!tbody) return [];
+        tbody.querySelectorAll('tr').forEach(tr => {
+            const rowData = [];
+            tr.querySelectorAll('input, select').forEach(input => {
+                rowData.push(input.value);
+            });
+            rows.push(rowData);
+        });
+        return rows;
+    }
+
+    function loadFromLocalStorage() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) { addPainCard(); return; } // Default state
+        
+        const data = JSON.parse(saved);
+
+        // 1. Restore Static
+        for (const [id, val] of Object.entries(data.static)) {
+            const el = document.getElementById(id);
+            if (el) {
+                if(el.type === 'checkbox') {
+                    el.checked = val;
+                    // Trigger toggle functions
+                    if(el.onchange) el.onchange({target: el}); // Simulate event
+                    // Manually trigger specific toggles based on ID naming convention
+                    if(id.startsWith('rom-')) toggleROM(id, el);
+                    if(id.startsWith('mmt-')) toggleMMT(id, el);
+                    if(id.startsWith('derm-')) toggleDerm(id, el);
+                    if(id.startsWith('myo-')) toggleMyo(id, el);
+                    if(id.startsWith('neuro-')) toggleSec(id, el);
+                } else {
+                    el.value = val;
+                }
+            }
+        }
+
+        // 2. Restore Pain Cards
+        const container = document.getElementById('pain-container');
+        container.innerHTML = ''; // Clear default
+        if (data.pain && data.pain.length > 0) {
+            data.pain.forEach(p => addPainCard(p.loc, p.vas));
+        } else {
+            addPainCard();
+        }
+
+        // 3. Restore Spine Tables
+        if(data.spine) {
+            restoreTable('table-pacvp', data.spine.pacvp, addCentralRow);
+            restoreTable('table-split', data.spine.split, addSplitRow);
+            restoreTable('table-special', data.spine.special, addSpecialRow);
+            restoreTable('table-combined', data.spine.combined, addCombinedRow);
+            restoreTable('table-aux', data.spine.aux, (id) => addRowGeneric(id)); // Assuming Aux is simpler
+        }
+
+        runLiveReasoning(); // Re-run logic
+    }
+
+    function restoreTable(id, rowsData, addFunc) {
+        const tbody = document.querySelector(`#${id} tbody`);
+        if(!rowsData || !tbody) return;
+        
+        // Clear existing rows (keep first if it was default? No, usually clear all for clean state)
+        // But our add functions append. Let's clear default rows first if they exist
+        while(tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        rowsData.forEach(vals => {
+            // We call the add function to create the DOM
+            addFunc(id); 
+            // Now populate the last row
+            const lastRow = tbody.lastElementChild;
+            const inputs = lastRow.querySelectorAll('input, select');
+            vals.forEach((v, index) => {
+                if(inputs[index]) {
+                    inputs[index].value = v;
+                    // Check colors for selects
+                    if(inputs[index].tagName === 'SELECT') {
+                        if(id.includes('spine') || id.includes('table')) checkSpineColor(inputs[index]);
+                    }
+                }
+            });
+        });
+        if(rowsData.length === 0) {
+            // Restore at least one empty row if needed, or leave empty
+             addFunc(id); 
+        }
+        updateSpineSummary();
+    }
+    
+    // Helper for visual feedback
+    function showAutoSaveStatus() {
+        // Option: Add a small dot or text somewhere. 
+        // console.log("Auto-saved");
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    // --- Feature: Rule Engine (Red Flags & Reasoning) ---
+    
+    let redFlagTriggered = false; // Prevent spamming modal
+
+    function checkRedFlags() {
+        const textToCheck = (
+            document.getElementById('dxInput').value + " " + 
+            document.getElementById('historyInput').value
+        ).toLowerCase();
+
+        let foundFlag = null;
+
+        for (const rule of redFlagRules) {
+            if (textToCheck.includes(rule.key)) {
+                foundFlag = rule;
+                break;
+            }
+        }
+
+        if (foundFlag && !redFlagTriggered) {
+            showRedFlag(foundFlag.msg);
+            redFlagTriggered = true;
+        } else if (!foundFlag) {
+            redFlagTriggered = false; // Reset if cleared
+        }
+    }
+
+    function showRedFlag(msg) {
+        document.getElementById('red-flag-msg').innerText = msg;
+        document.getElementById('red-flag-modal').classList.remove('hidden');
+    }
+
+    function closeRedFlag() {
+        document.getElementById('red-flag-modal').classList.add('hidden');
+    }
+
+    // Enhanced AI Logic
+    const logicDB = { 
+        '頸': {assess:'頸椎問題 (Cervical Dysfunction)', plan:'• 建議測試: Spurling Test\n• 治療: 頸椎牽引, 姿勢矯正'}, 
+        '肩': {assess:'肩關節障礙 (Shoulder Impingement?)', plan:'• 建議測試: Neer Test, Hawkins-Kennedy\n• 治療: 旋轉肌袖強化'}, 
+        '腰': {assess:'腰椎不穩/疼痛 (Lumbar Instability)', plan:'• 建議測試: SLR Test\n• 治療: 核心穩定運動'}, 
+        '膝': {assess:'膝關節力學異常 (Knee Dysfunction)', plan:'• 建議測試: McMurray Test\n• 治療: 股四頭肌強化'}, 
+        '踝': {assess:'足踝扭傷/不穩 (Ankle Instability)', plan:'• 建議測試: Anterior Drawer\n• 治療: 本體感覺訓練'} 
+    };
+
+    function runLiveReasoning() {
+        const txt = document.body.innerText;
+        const inputDx = document.getElementById('dxInput').value;
+        const painLocs = Array.from(document.querySelectorAll('.pain-input')).map(i => i.value).join(" ");
+        const fullContext = (inputDx + " " + painLocs).toLowerCase();
+        
+        let assess = [];
+        let plan = [];
+
+        // 1. Keyword Matching
+        Object.keys(logicDB).forEach(k => { 
+            if(fullContext.includes(k)) { 
+                assess.push(logicDB[k].assess); 
+                plan.push(logicDB[k].plan); 
+            } 
+        });
+
+        // 2. Rule-based: High Pain Score
+        let maxVas = 0;
+        document.querySelectorAll('.vas-val').forEach(el => {
+            const v = parseInt(el.innerText);
+            if(v > maxVas) maxVas = v;
+        });
+
+        if (maxVas >= 7) {
+            assess.push("劇烈疼痛狀態 (Acute Severe Pain)");
+            plan.unshift("• 優先處置: 疼痛控制 (Modalities/Rest) 優於運動治療");
+        }
+
+        // 3. Rule-based: MMT Weakness
+        if(document.querySelectorAll('.val-weak').length > 0) {
+            assess.push("顯著肌力不足 (Significant Weakness)");
+            plan.push("• 建議: 從抗重力或輔助主動運動 (AAROM) 開始");
+        }
+        
+        // 4. Rule-based: Neuro
+        if(document.querySelector('#neuro-summary').classList.contains('res-abnormal')) {
+            assess.push("神經張力異常 (Neural Tension Signs)");
+            plan.push("• 建議: 神經鬆動術 (Nerve Mobilization)");
+        }
+
+        document.getElementById('diag-output').innerText = assess.length ? assess.join("\n") : "等待更多數據..."; 
+        document.getElementById('treatment-content').innerText = plan.length ? [...new Set(plan)].join("\n\n") : ""; 
+    }
+
+
+
+    // --- Data Extraction & SOAP Generation ---
+    function generateRealSOAP() {
+        const pt = {
+            name: document.getElementById('patientName').value || "Anonymous",
+            sex: document.getElementById('patientSex').value,
+            age: document.getElementById('patientAge').value,
+            job: document.getElementById('patientJob').value || "Not stated",
+            dx: document.getElementById('dxInput').value || "Pending",
+            hx: document.getElementById('historyInput').value || "No significant history noted."
+        };
+
+        let painList = [];
+        document.querySelectorAll('.pain-card').forEach(card => {
+            const loc = card.querySelector('.pain-input').value;
+            const vas = card.querySelector('.vas-val').innerText;
+            if(loc) painList.push({ loc, vas });
+        });
+
+        const objData = { obs: [], rom: [], mmt: [], neuro: [], special: [], spine: [] };
+
+        document.querySelectorAll('.obs-cell select, .obs-cell input').forEach(el => {
+            if(el.value && !el.value.includes("正常")) {
+                objData.obs.push(el.closest('td').dataset.label + ": " + el.value);
+            }
+        });
+
+        document.querySelectorAll('#rom-wrapper .val-restricted').forEach(el => {
+            const row = el.closest('tr');
+            const joint = row.closest('table').querySelector('.joint-header').innerText;
+            const move = row.querySelector('.movement-col').innerText;
+            const side = (el.closest('td').cellIndex === 0) ? "L" : "R"; 
+            objData.rom.push(`${joint} ${move} (${side}): ${el.value}°`);
+        });
+
+        document.querySelectorAll('#mmt-wrapper .val-weak').forEach(el => {
+            const row = el.closest('tr');
+            const joint = row.closest('table').querySelector('.mmt-header').innerText.replace(' MMT','');
+            const move = row.querySelector('.movement-col').innerText;
+            const side = (el.closest('td').cellIndex === 0) ? "L" : "R";
+            objData.mmt.push(`${joint} ${move} (${side}): Grade ${el.value}`);
+        });
+
+        document.querySelectorAll('#st-container .st-pos').forEach(el => {
+            const name = el.getAttribute('data-name');
+            const side = el.getAttribute('data-side');
+            objData.special.push(`${name} (${side}): Positive (+)`);
+        });
+
+        const neuroSum = document.getElementById('neuro-summary');
+        if (neuroSum.classList.contains('res-abnormal')) {
+            objData.neuro.push(neuroSum.innerHTML.replace(/<br>/g, '\n').replace(/•/g, '').trim());
+        }
+
+        const spineSum = document.getElementById('spine-summary');
+        if (spineSum.classList.contains('res-abnormal')) {
+            objData.spine.push(spineSum.innerHTML.replace(/<br>/g, '\n').replace(/•/g, '').trim());
+        }
+
+        const date = new Date().toLocaleDateString('zh-TW');
+        const line = "----------------------------------------";
+        
+        let objectiveText = "";
+        const addSec = (title, items) => {
+            if(items.length > 0) objectiveText += `\n[${title}]\n- ${items.join('\n- ')}\n`;
+        };
+
+        addSec("Observation", objData.obs);
+        addSec("ROM Limitations", objData.rom);
+        addSec("MMT Weakness", objData.mmt);
+        addSec("Special Tests", objData.special);
+        if(objData.neuro.length) objectiveText += `\n[Neurodynamics]\n${objData.neuro[0]}\n`; 
+        if(objData.spine.length) objectiveText += `\n[Joint Play]\n${objData.spine[0]}\n`;
+
+        if(objectiveText === "") objectiveText = "\n- No significant findings recorded.\n";
+
+        const planText = document.getElementById('treatment-content').innerText || "TBA";
+
+        const report = `PHYSICAL THERAPY NOTE
+Date: ${date}
+Patient: ${pt.name} (${pt.sex}/${pt.age})
+Occupation: ${pt.job}
+Dx: ${pt.dx}
+
+${line}
+(S) SUBJECTIVE
+${line}
+• Hx: ${pt.hx}
+• Pain:
+${painList.map(p => `  - ${p.loc}: VAS ${p.vas}/10`).join('\n') || "  - None reported"}
+
+${line}
+(O) OBJECTIVE
+${line}${objectiveText}
+${line}
+(A) ASSESSMENT
+${line}
+• Impression: ${document.getElementById('diag-output').innerText.replace(/\n/g, '; ')}
+
+${line}
+(P) PLAN
+${line}
+${planText}
+
+__________________________
+PT Signature`;
+
+        document.getElementById('soap-editor').value = report;
+    }
+
+    function copyToClipboard() {
+        const el = document.getElementById('soap-editor');
+        el.select();
+        el.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(el.value).then(() => {
+            const t = document.getElementById('toast');
+            t.style.opacity = 1;
+            setTimeout(() => t.style.opacity = 0, 2000);
+        });
+    }
+
+    // --- 全身特殊測試資料庫 ---
+    const specialTestDB = {
+        '頸': { title: '頸椎 Cervical', keys: ['頸', 'neck', 'c-spine'], tests: [
+            {n: 'Spurling Test', h: 'Radiculopathy'}, {n: 'Distraction Test', h: 'Relief Symptoms'}, {n: 'Sharp-Purser', h: 'Instability'}, {n: 'ULTT', h: 'Neural Tension'}
+        ]},
+        '肩': { title: '肩膀 Shoulder', keys: ['肩', 'shoulder', 'acromion'], tests: [
+            {n: 'Neer Impingement', h: 'Subacromial Impingement'}, {n: 'Hawkins-Kennedy', h: 'Impingement'}, {n: 'Empty Can (Jobe)', h: 'Supraspinatus'}, {n: 'Drop Arm', h: 'Rotator Cuff Tear'}, {n: 'Speed\'s Test', h: 'Biceps Tendon'}, {n: 'Apprehension', h: 'Instability'}
+        ]},
+        '肘': { title: '手肘 Elbow', keys: ['肘', 'elbow', 'epicondyl'], tests: [
+            {n: 'Cozen\'s Test', h: 'Tennis Elbow (Lat)'}, {n: 'Mill\'s Test', h: 'Tennis Elbow'}, {n: 'Golfer\'s Elbow', h: 'Medial Epicondylitis'}, {n: 'Valgus Stress', h: 'UCL Ligament'}
+        ]},
+        '腕': { title: '手腕 Wrist/Hand', keys: ['腕', '手', 'wrist', 'hand', 'carpal'], tests: [
+            {n: 'Phalen\'s Test', h: 'Carpal Tunnel'}, {n: 'Tinel\'s Sign', h: 'Nerve Irritation'}, {n: 'Finkelstein', h: 'De Quervain\'s'}, {n: 'Froment\'s Sign', h: 'Ulnar Nerve'}
+        ]},
+        '胸': { title: '胸椎 Thoracic', keys: ['胸', 'thoracic', 'rib'], tests: [
+            {n: 'Slump Test', h: 'Dural Tension'}, {n: 'Adam\'s Forward Bend', h: 'Scoliosis'}, {n: 'Thoracic Rotation', h: 'Mobility'}
+        ]},
+        '腰': { title: '腰椎 Lumbar', keys: ['腰', 'lumbar', 'back', 'lbp'], tests: [
+            {n: 'SLR / Crossed SLR', h: 'HNP / Sciatic'}, {n: 'Slump Test', h: 'Neural Tension'}, {n: 'Quadrant (Kemp)', h: 'Facet / Stenosis'}, {n: 'Prone Instability', h: 'Core Control'}
+        ]},
+        '髖': { title: '髖部 Hip', keys: ['髖', 'hip', 'groin', 'si joint', '屁股'], tests: [
+            {n: 'FABER (Patrick)', h: 'Hip/SIJ Pathology'}, {n: 'FADIR', h: 'FAI Impingement'}, {n: 'Thomas Test', h: 'Ilio/Rectus Tightness'}, {n: 'Trendelenburg', h: 'Glute Med Weakness'}
+        ]},
+        '膝': { title: '膝蓋 Knee', keys: ['膝', 'knee', 'patella'], tests: [
+            {n: 'McMurray Test', h: 'Meniscus'}, {n: 'Lachman Test', h: 'ACL'}, {n: 'Ant./Post. Drawer', h: 'ACL / PCL'}, {n: 'Valgus/Varus Stress', h: 'MCL / LCL'}, {n: 'Patellar Grind', h: 'PFPS'}
+        ]},
+        '踝': { title: '腳踝 Ankle', keys: ['踝', 'ankle', 'foot', 'achilles'], tests: [
+            {n: 'Anterior Drawer', h: 'ATFL Instability'}, {n: 'Talar Tilt', h: 'CFL Instability'}, {n: 'Thompson Test', h: 'Achilles Rupture'}, {n: 'Squeeze Test', h: 'Syndesmosis'}
+        ]}
+    };
+
+    // Pain
+    function addPainCard(loc = '', vas = '0') { 
+        const div = document.createElement('div'); 
+        div.className = "pain-card border-b border-dashed pb-2 relative mb-2"; 
+        div.innerHTML = `
+            <input type="text" class="clean-input pain-input text-left font-bold text-red-700 mb-1" placeholder="輸入疼痛部位 (如: 肩, 膝)..." value="${loc}" oninput="runLiveReasoning(); analyzePainInput()">
+            <div class="flex items-center gap-2 text-[10px] vas-box">
+                <span class="font-bold w-6">VAS</span>
+                <div class="w-full">
+                    <input type="range" min="0" max="10" value="${vas}" class="w-full h-1 bg-slate-200 appearance-none rounded cursor-pointer block" oninput="this.closest('.vas-box').querySelector('.vas-val').innerText = this.value; runLiveReasoning();">
+                    <div class="flex justify-between text-[8px] text-slate-400 px-0.5 pt-1">
+                        <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                    </div>
+                </div>
+                <span class="vas-display text-red-600 font-bold w-4 text-center text-xs vas-val">${vas}</span>
+            </div>
+            <span class="material-icons absolute top-0 right-0 text-[10px] text-slate-300 cursor-pointer hover:text-red-500" onclick="this.parentElement.remove(); analyzePainInput(); saveToLocalStorage();">close</span>
+        `; 
+        document.getElementById('pain-container').appendChild(div); 
+    }
+
+    // Special Tests Logic
+    function analyzePainInput() {
+        const inputs = document.querySelectorAll('.pain-input');
+        let fullText = "";
+        inputs.forEach(input => fullText += input.value.toLowerCase() + " ");
+        const container = document.getElementById('st-container');
+        const badge = document.getElementById('ai-badge');
+        let matchedCats = [];
+        Object.values(specialTestDB).forEach(cat => {
+            if (cat.keys.some(k => fullText.includes(k))) matchedCats.push(cat);
+        });
+        if (matchedCats.length > 0) {
+            badge.classList.remove('hidden');
+            // 只在內容改變時重建，避免重繪閃爍 (簡單處理: 若數量變動則重建)
+            // 這裡為了保持簡單，我們先全清空再重建，但會遺失 ST 的勾選狀態。
+            // 最佳解法是 Diffing，但在單一檔案架構下，我們選擇在 "增加疼痛部位" 時重置下方建議
+            // 若要保留勾選，需配合 LocalStorage。目前架構下，切換疼痛部位會刷新下方列表。
+            container.innerHTML = ''; 
+            matchedCats.forEach(cat => {
+                const header = document.createElement('div');
+                header.className = 'st-header-row';
+                header.innerHTML = `<span>${cat.title}</span><span class="text-[9px] opacity-60">L / R</span>`;
+                container.appendChild(header);
+                cat.tests.forEach(test => {
+                    const row = document.createElement('div');
+                    row.className = 'st-row';
+                    row.innerHTML = `<div class="st-name">${test.n}<span class="st-hint">${test.h}</span></div><div class="flex gap-1"><select class="st-select" data-name="${test.n}" data-side="L" onchange="toggleStColor(this); updateStSummary()"><option value="">L-</option><option value="Pos">Pos +</option><option value="Neg">Neg -</option></select><select class="st-select" data-name="${test.n}" data-side="R" onchange="toggleStColor(this); updateStSummary()"><option value="">R-</option><option value="Pos">Pos +</option><option value="Neg">Neg -</option></select></div>`;
+                    container.appendChild(row);
+                });
+            });
+            updateStSummary(); 
+        } else {
+            badge.classList.add('hidden');
+            container.innerHTML = `<div class="text-center text-xs text-slate-400 py-6 italic">等待疼痛部位輸入...</div>`;
+            document.getElementById('st-summary').innerHTML = `<span class="italic text-slate-400">未執行測試。</span>`;
+        }
+    }
+    function toggleStColor(sel) { sel.className = 'st-select'; if(sel.value === 'Pos') sel.classList.add('st-pos'); if(sel.value === 'Neg') sel.classList.add('st-neg'); }
+    function updateStSummary() {
+        const summaryBox = document.getElementById('st-summary');
+        const allSelects = document.querySelectorAll('#st-container .st-select');
+        let findings = [];
+        let hasTested = false;
+        allSelects.forEach(sel => {
+            if (sel.value) { 
+                hasTested = true;
+                if (sel.value === 'Pos') {
+                    const name = sel.getAttribute('data-name');
+                    const side = sel.getAttribute('data-side');
+                    findings.push(`<b>${name} (${side})</b>: Positive (+)`);
+                }
+            }
+        });
+        if (!hasTested) { summaryBox.innerHTML = `<span class="italic text-slate-400">未執行測試。</span>`; summaryBox.classList.remove('res-abnormal'); } 
+        else if (findings.length > 0) { summaryBox.innerHTML = findings.join('<br>'); summaryBox.classList.add('res-abnormal'); } 
+        else { summaryBox.innerHTML = `<span class="res-normal">所有測試均為陰性 (Negative)。</span>`; summaryBox.classList.remove('res-abnormal'); }
+    }
+
+    // Obs
+    function handleObsChange(el) { if(el.value.includes("Other")) el.parentElement.innerHTML = `<input type="text" class="clean-input text-abnormal border-b border-red-300" placeholder="手寫..." onblur="updateObsSummary()">`; else el.className = el.value.includes("正常") ? "obs-select text-normal" : "obs-select text-abnormal"; updateObsSummary(); }
+    function updateObsSummary() { let list = []; document.querySelectorAll('.obs-cell').forEach(cell => { const sel = cell.querySelector('select'); const inp = cell.querySelector('input'); let val = sel ? sel.value : inp.value; if(val && !val.includes("正常")) list.push(`${cell.dataset.label}: ${val}`); }); document.getElementById('obs-summary').innerText = list.length ? list.join(" / ") : "無異常發現 (Normal)。"; }
+
+    // ROM & MMT
+    function toggleROM(id, cb) { const s=document.getElementById(id); if(s) { s.style.display=(cb.checked || cb.value === "true")?'block':'none'; } }
+    function checkROM(el) { const tr=el.closest('tr'); const std=parseFloat(tr.dataset.std); const val=parseFloat(el.value); if(!isNaN(val)&&val<std) el.classList.add('val-restricted'); else el.classList.remove('val-restricted'); updateROMSummary(); }
+    function updateROMSummary() { let list=[]; document.querySelectorAll('#rom-wrapper .val-restricted').forEach(el=>{ const tr=el.closest('tr'); const joint=tr.closest('table').querySelector('.joint-header').innerText; const move=tr.querySelector('.movement-col').innerText; const idx=el.closest('td').cellIndex; let side=(tr.children.length===3?(idx===0):(idx<3))?"左":"右"; list.push(`${joint} [${side}] ${move}: ${el.value}°`); }); document.getElementById('rom-summary').innerText=list.length?list.join(" | "):"所有數值正常 (WNL)。"; }
+    
+    function toggleMMT(id, cb) { const s=document.getElementById(id); if(s) { s.style.display=(cb.checked || cb.value === "true")?'block':'none'; } }
+    function checkMMT(el) { const val=parseFloat(el.value); if(!isNaN(val)&&val<3) el.classList.add('val-weak'); else el.classList.remove('val-weak'); updateMMTSummary(); }
+    function updateMMTSummary() { let list=[]; document.querySelectorAll('#mmt-wrapper .val-weak').forEach(el=>{ const tr=el.closest('tr'); const joint=tr.closest('table').querySelector('.mmt-header').innerText; const move=tr.querySelector('.movement-col').innerText; const idx=el.closest('td').cellIndex; let side=(idx===0)?"左":"右"; list.push(`${joint} [${side}] ${move}: ${el.value}分`); }); document.getElementById('mmt-summary').innerText=list.length?list.join(" | "):"所有肌力正常 (Grade 5)。"; }
+    
+    // Derm & Myo
+    function toggleDerm(id, cb) { const s=document.getElementById(id); if(s) s.style.display=(cb.checked || cb.value === "true")?'block':'none'; }
+    function checkDerm(el) { if(el.value==="異常") el.classList.add('val-abnormal'); else el.classList.remove('val-abnormal'); updateDermSummary(); }
+    function updateDermSummary() { let list=[]; document.querySelectorAll('#derm-wrapper .val-abnormal').forEach(el=>{ const tr=el.closest('tr'); const level=tr.querySelector('.derm-col').innerText.split(' ')[0]; const idx=el.closest('td').cellIndex; let side=(idx===0)?"Left":"Right"; list.push(`${level} [${side}] 異常`); }); document.getElementById('derm-summary').innerText=list.length?list.join(" | "):"皮節感覺正常 (Intact)。"; }
+    
+    function toggleMyo(id, cb) { const s=document.getElementById(id); if(s) s.style.display=(cb.checked || cb.value === "true")?'block':'none'; }
+    function checkMyo(el) { const val=parseFloat(el.value); if(!isNaN(val)&&val<3) el.classList.add('val-weak'); else el.classList.remove('val-weak'); updateMyoSummary(); }
+    function updateMyoSummary() { const div=document.getElementById('myo-summary-list'); const weak=document.querySelectorAll('#myo-wrapper .myo-val.val-weak'); if(weak.length===0){div.innerHTML=`<span class="italic text-slate-400">神經肌肉控制正常 (Intact)。</span>`;return;} let list=[]; weak.forEach(el=>{ const tr=el.closest('tr'); const total=tr.children.length; if(total===1) list.push(`• [Bilateral] C1-C2 Neck flexion: ${el.value}`); else { const act=tr.querySelector('.action-col').innerText; let side=(el.closest('td').cellIndex===0)?"Left":"Right"; list.push(`• [${side}] ${act}: ${el.value}`); } }); div.innerHTML=`<ul class="list-disc list-inside space-y-1 font-bold text-rose-700">${list.map(i=>`<li>${i}</li>`).join('')}</ul>`; }
+
+    // Neuro & Spine Logic
+    function toggleSec(id, cb) { const s=document.getElementById(id); if(s) s.style.display=(cb.checked || cb.value === "true")?'block':'none'; }
+    function checkNeuroColor(sel) { 
+        if (sel.value.includes("陰性")) { sel.classList.remove('res-abnormal'); sel.classList.add('res-normal'); } 
+        else { sel.classList.remove('res-normal'); sel.classList.add('res-abnormal'); } 
+        updateNeuroSummary(); 
+    }
+    function updateNeuroSummary() { 
+        let findings = []; 
+        const allRows = document.querySelectorAll('#neuro-ulnt tr, #neuro-llnt tr');
+        allRows.forEach(tr => { 
+            const selectL = tr.cells[0] ? tr.cells[0].querySelector('select') : null;
+            if (!selectL) return; 
+            let testName = tr.cells[1].innerText.split('\n')[0]; 
+            const resL = selectL.value; const inputL = tr.cells[0].querySelector('input'); const degL = inputL ? inputL.value.trim() : ''; 
+            const selectR = tr.cells[2].querySelector('select'); const resR = selectR ? selectR.value : ''; const inputR = tr.cells[2].querySelector('input'); const degR = inputR ? inputR.value.trim() : ''; 
+            const inputRem = tr.cells[3].querySelector('input'); const remark = inputRem ? inputRem.value.trim() : ''; 
+            let isAbnormal = !resL.includes("陰性") || !resR.includes("陰性"); let hasInput = degL !== '' || degR !== '' || remark !== ''; 
+            if (isAbnormal || hasInput) { 
+                let details = []; 
+                if (!resL.includes("陰性") || degL) details.push(`L: ${resL}${degL ? `(${degL})` : ''}`); 
+                if (!resR.includes("陰性") || degR) details.push(`R: ${resR}${degR ? `(${degR})` : ''}`); 
+                if (details.length === 0 && remark) details.push('Results Normal');
+                findings.push(`- ${testName}: ${details.join(', ')} ${remark ? `[${remark}]` : ''}`); 
+            } 
+        }); 
+        const summaryBox = document.getElementById('neuro-summary');
+        if (findings.length > 0) { summaryBox.innerHTML = findings.join('<br>'); summaryBox.classList.add('res-abnormal'); } 
+        else { summaryBox.innerHTML = `<span class="italic text-slate-400">神經張力測試陰性 (Negative)。</span>`; summaryBox.classList.remove('res-abnormal'); }
+    }
+
+    function checkSpineColor(select) { if(select.value.includes("正常")||select.value.includes("陰性")) { select.classList.remove('res-abnormal'); select.classList.add('res-normal'); } else { select.classList.remove('res-normal'); select.classList.add('res-abnormal'); } updateSpineSummary(); }
+    function addCentralRow(tid) { const tr=document.createElement('tr'); tr.innerHTML=`<td><input type="text" class="level-input" placeholder="..." oninput="updateSpineSummary()"></td><td><select class="res-select" onchange="checkSpineColor(this)"><option value="正常 Normal">正常 Normal</option><option value="活動度過低 Hypo">活動度過低 Hypo</option><option value="活動度過高 Hyper">活動度過高 Hyper</option><option value="疼痛 Pain">疼痛 Pain</option><option value="痙攣 Spasm">痙攣 Spasm</option></select></td><td><input type="text" class="remark-input" placeholder="備註..." oninput="updateSpineSummary()"></td><td><span class="material-icons del-btn" onclick="delRow(this)">close</span></td>`; document.querySelector(`#${tid} tbody`).appendChild(tr); }
+    function addSplitRow(tid) { const tr=document.createElement('tr'); tr.innerHTML=`<td><select class="res-select font-bold text-fuchsia-900 text-left"><option value="PAUVP">PAUVP</option><option value="Transverse">Transverse</option><option value="APUVP">APUVP</option></select></td><td><select class="res-select" onchange="checkSpineColor(this)"><option value="正常 Normal">正常</option><option value="活動度過低 Hypo">過低 Hypo</option><option value="活動度過高 Hyper">過高 Hyper</option><option value="疼痛 Pain">疼痛 Pain</option></select></td><td><input type="text" class="level-input" placeholder="C5" oninput="updateSpineSummary()"></td><td><select class="res-select" onchange="checkSpineColor(this)"><option value="正常 Normal">正常</option><option value="活動度過低 Hypo">過低 Hypo</option><option value="活動度過高 Hyper">過高 Hyper</option><option value="疼痛 Pain">疼痛 Pain</option></select></td><td><input type="text" class="remark-input" placeholder="備註..." oninput="updateSpineSummary()"></td><td><span class="material-icons del-btn" onclick="delRow(this)">close</span></td>`; document.querySelector(`#${tid} tbody`).appendChild(tr); }
+    function addSpecialRow(tid) { const tr=document.createElement('tr'); tr.innerHTML=`<td><select class="res-select font-bold text-fuchsia-900 text-left"><option value="AP Central">AP Central</option><option value="Costovertebral">Costovertebral</option><option value="Coccygeal">Coccygeal</option></select></td><td><input type="text" class="level-input" placeholder="..." oninput="updateSpineSummary()"></td><td><select class="res-select" onchange="checkSpineColor(this)"><option value="正常 Normal">正常 Normal</option><option value="活動度過低 Hypo">過低 Hypo</option><option value="活動度過高 Hyper">過高 Hyper</option><option value="疼痛 Pain">疼痛 Pain</option><option value="偏移 Deviated">偏移 Deviated</option></select></td><td><input type="text" class="remark-input" placeholder="備註..." oninput="updateSpineSummary()"></td><td><span class="material-icons del-btn" onclick="delRow(this)">close</span></td>`; document.querySelector(`#${tid} tbody`).appendChild(tr); }
+    function addCombinedRow(tid) { const tr=document.createElement('tr'); tr.innerHTML=`<td><select class="res-select font-bold text-fuchsia-900 text-left"><option value="Axial Compression">Axial Comp.</option><option value="Narrowing">Narrowing</option><option value="Combined PACVP">Combined PACVP</option></select></td><td><input type="text" class="level-input" placeholder="..." oninput="updateSpineSummary()"></td><td><select class="res-select" onchange="checkSpineColor(this)"><option value="陰性 (-)">陰性 (-)</option><option value="陽性 (+)">陽性 (+)</option><option value="疼痛 Pain">疼痛 Pain</option></select></td><td><input type="text" class="remark-input" placeholder="備註..." oninput="updateSpineSummary()"></td><td><span class="material-icons del-btn" onclick="delRow(this)">close</span></td>`; document.querySelector(`#${tid} tbody`).appendChild(tr); }
+    function addRowGeneric(tid) { /* Fallback for restore */ addCentralRow(tid); }
+    function delRow(btn) { const tr=btn.closest('tr'); const tb=tr.parentElement; if(tb.children.length>1){tr.remove();}else{tr.querySelectorAll('input').forEach(i=>i.value='');tr.querySelectorAll('select').forEach(s=>{s.selectedIndex=0;checkSpineColor(s)});} updateSpineSummary(); }
+    
+    function updateSpineSummary() { 
+        let findings = []; 
+        document.querySelectorAll('#table-pacvp tbody tr').forEach(tr => { const lvl=tr.querySelector('.level-input').value.trim(); const res=tr.querySelector('.res-select').value; const rem=tr.querySelector('.remark-input').value.trim(); if((lvl&&!res.includes("正常"))||rem) findings.push(`• <b>PACVP (${lvl})</b>: ${res} <span class="text-gray-500">${rem?`(${rem})`:''}</span>`); }); 
+        document.querySelectorAll('#table-split tbody tr').forEach(tr => { const tech=tr.cells[0].querySelector('select').value; const lvl=tr.querySelector('.level-input').value.trim(); const rR=tr.cells[1].querySelector('select').value; const rL=tr.cells[3].querySelector('select').value; const rem=tr.querySelector('.remark-input').value.trim(); if(lvl) { let ab=[]; if(!rR.includes("正常")) ab.push(`R: ${rR}`); if(!rL.includes("正常")) ab.push(`L: ${rL}`); if(ab.length>0||rem) findings.push(`• <b>${tech} (${lvl})</b>: ${ab.length?ab.join(', '):'Normal'} <span class="text-gray-500">${rem?`(${rem})`:''}</span>`); } }); 
+        ['table-special','table-combined','table-aux'].forEach(tid=>{ 
+            const tb = document.querySelector(`#${tid} tbody`); 
+            if(tb) tb.querySelectorAll('tr').forEach(tr=>{ 
+                let techCell = tr.cells[0];
+                let tech = techCell.innerText.trim(); 
+                if(!tech && techCell.querySelector('select')) tech = techCell.querySelector('select').value;
+                const lvl=tr.querySelector('.level-input').value.trim(); 
+                const resCell = tr.cells[2];
+                const res = resCell.querySelector('select') ? resCell.querySelector('select').value : resCell.innerText; 
+                const rem=tr.querySelector('.remark-input').value.trim(); 
+                if((lvl&&(!res.includes("正常")&&!res.includes("陰性")))||rem) findings.push(`• <b>${tech} ${lvl?`(${lvl})`:''}</b>: ${res} <span class="text-gray-500">${rem?`(${rem})`:''}</span>`); 
+            }); 
+        }); 
+        document.getElementById('spine-summary').innerHTML = findings.length > 0 ? findings.join("<br>") : `<span class="italic text-slate-400">未執行測試或無異常發現。</span>`; 
+    }
+
+</script>
+
+<script src="script.js"></script>
