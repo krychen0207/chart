@@ -7,7 +7,18 @@ async function getAIRereasoning(soapNote) {
     const WORKSPACE_SLUG = '681071c0-d178-47ce-963b-88c325eabab8'; 
 
     // 建立給 AI 的指令
-    const prompt = `你是一位資深物理治療師，請根據以下【病患個案 SOAP】以及你所學的【物理治療醫學課本】知識，提供專業推論：\n\n${soapNote}`;
+    const prompt = `
+    你是一位資深物理治療師，請根據以下【病患個案 SOAP】以及你所學的【物理治療醫學課本】知識提供推論。
+    
+    【格式要求】：
+    1. 請務必使用繁體中文回傳。
+    2. 內容必須分為 A (Assessment) 與 P (Plan) 兩大區塊。
+    3. 每個重點請使用「數字列表」或「點擊列表」並『強制換行』。
+    4. 中間請用 ------------------------ 分隔。
+
+    病患 SOAP 內容：
+    ${soapNote}
+`;
 
     try {
         const response = await fetch(`${NGROK_URL}/api/v1/workspace/${WORKSPACE_SLUG}/chat`, {
