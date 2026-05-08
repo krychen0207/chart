@@ -79,14 +79,14 @@ async function switchView(viewName) {
         if(loadingEl) loadingEl.remove();
         
         diagBox.innerHTML = `
-            <div class="mb-4 text-slate-500 border-b pb-2">系統初步判斷：<br>${originalAssessment}</div>
-            <div class="text-indigo-900 bg-white p-4 rounded-lg border-2 border-indigo-100 shadow-sm">
-                <div class="flex items-center font-black text-indigo-700 mb-2">
-                    <span class="material-icons text-[18px] mr-1">menu_book</span> 物理治療課本深度分析：
-                </div>
-                <div class="text-xs leading-relaxed" style="white-space: pre-wrap;">${aiInsight}</div>
-            </div>
-        `;
+        <div class="mb-4 text-slate-500 border-b pb-2">系統初步判斷：<br>${originalAssessment}</div>
+        <div class="text-indigo-900 bg-white p-4 rounded-lg border-2 border-indigo-100 shadow-sm">
+        <div class="flex items-center font-black text-indigo-700 mb-2">
+            <span class="material-icons text-[18px] mr-1">menu_book</span> 物理治療課本深度分析：
+        </div>
+            <div class="text-xs leading-relaxed text-left" style="white-space: pre-wrap;">${aiInsight}</div>
+        </div>
+`;
 
     } else {
         assessDiv.style.display = 'grid';
